@@ -19,6 +19,7 @@ class ImageClassifier:
         self.top_k = 5
 
     def extract_features_from_img(self, cur_img):
+        """Судя по названию эта функция извлекает фичи из тестового изображения"""
         cur_img = cv2.resize(cur_img, (224, 224))
         img = preprocess_input(cur_img)
         img = np.expand_dims(img, axis=0)

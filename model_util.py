@@ -8,6 +8,7 @@ import numpy as np
 
 from keras.applications.mobilenet import MobileNet, preprocess_input
 from keras.preprocessing import image as process_image
+from keras.utils import Sequence
 from tensorflow.python.keras.layers.pooling import GlobalAveragePooling2D
 from tensorflow.python.keras import Model
 import tensorflow as tf
@@ -88,3 +89,26 @@ class DeepModel():
         return features
 
 
+class DataSequence(Sequence):
+    '''Predict generator inherit from `keras.utils.Sequence`.'''
+    def __init__(self, paras, generation, batch_size=32):
+        self.list_of_label_fields = []
+        self.list_of_paras = paras
+        self.data_generation = generation
+        self.batch_size = batch_size
+        self.__idx = 0
+
+    def __len__(self):
+        '''The number of batches per epoch.'''
+        return int(np.ceil(len(self.list_of_paras) / self.batch_size))
+
+    def __getitem__(self, idx):
+        '''Generate one batch of data.'''
+        paras = self.list_of_paras[idx * self.batch_size : (idx+1) * self.batch_size]
+        batch_x, batch_fields = self.data_generation(paras)
+
+        if idx == self.__idx:
+            self.list_of_label_fields += batch_fields
+            self.__idx += 1
+
+        return np.array(batch_x)
