@@ -20,7 +20,7 @@ class DeepModel():
     def __init__(self):
         self._model = self._define_model()
 
-        print('Loading MobileNet.')
+        print('Loading image-retrieval-0001.')
         print()
 
     @staticmethod

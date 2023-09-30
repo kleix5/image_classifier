@@ -7,14 +7,14 @@ import argparse
 import numpy as np
 from keras.applications.mobilenet import preprocess_input
 
-from openVDoc import model_util_ov
+from imgOVDoc import model_util_ov
 # from model_util import DeepModel
 
 
 class ImageClassifier:
     def __init__(self):
         self.all_skus = {}
-        self.model = model_util.DeepModel()
+        self.model = model_util_ov.DeepModel()
         self.predict_time = 0
         self.time_search = 0
         self.count_frame = 0
@@ -101,96 +101,3 @@ def run_match(img_path):
         return "нет совпадений"
     else:
         return result
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    # frameSize = (int(1920), int(1080))
-    # new_video = cv2.VideoWriter("test_roi.avi", fourcc=fourcc, fps=25, apiPreference=0,
-    #                             frameSize=frameSize)
-
-    # contour_table_test26 = [(1153, 744), (1149, 919), (984, 921), (994, 742)]
-    # # [{"x": 1153, "y": 744}, {"x": 1149, "y": 919}, {"x": 984, "y": 921}, {"x": 994, "y": 742}]
-    # contour = np.array(contour_table_test26).reshape((-1, 1, 2)).astype(np.int32)
-
-    # x, y, w, h = cv2.boundingRect(contour)
-
-    # test_images = 'test'
-
-    # classifier = ImageClassifier()
-
-    # test_paths = os.listdir(test_images)
-
-    # for f in test_paths:
-    #     classifier.add_img(os.path.join(test_images, f), f)
-
-    # path_t = 'data/output.mp4'
-
-    # cap = cv2.VideoCapture(path_t)
-    # count_frame = 0
-    # COLOR_RED = (0, 0, 255)
-    # COLOR_GREEN = (0, 255, 0)
-    # start_index = 0
-    # # bb = ((898, 474), (1326, 700))
-
-    # bb = ((x, y), (x + w, y + h))
-
-    # while True:
-    #     ret, frame = cap.read()
-
-    #     if not ret:
-    #         break
-
-    #     frame_cut = frame[bb[0][1]:bb[1][1], bb[0][0]:bb[1][0]]
-    #     # frame_cut = frame[y:y + h, x:x + w]
-    #     try:
-    #         name, dist = classifier.predict(frame_cut)
-    #         print(dist)
-    #         print(name)
-    #         if dist > 0.7:
-    #             cv2.rectangle(frame, (int(bb[0][0]), int(bb[0][1])), (int(bb[1][0]), int(bb[1][1])),
-    #                           COLOR_GREEN, 1)
-    #             cv2.putText(frame, str(dist), (int(bb[0][0]), int(bb[1][1]) + 15), cv2.FONT_HERSHEY_SIMPLEX,
-    #                         0.5,
-    #                         COLOR_GREEN, 2)
-    #         else:
-    #             cv2.rectangle(frame, (int(bb[0][0]), int(bb[0][1])), (int(bb[1][0]), int(bb[1][1])), COLOR_RED,
-    #                           1)
-    #             cv2.putText(frame, str(dist), (int(bb[0][0]), int(bb[1][1]) + 15), cv2.FONT_HERSHEY_SIMPLEX,
-    #                         0.5,
-    #                         COLOR_RED, 2)
-
-
-    #     except Exception as e:
-    #         pass
-
-    #     new_video.write(frame)
-    #     count_frame += 1
-    #     print(count_frame)
