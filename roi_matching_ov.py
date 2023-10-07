@@ -1,103 +1,110 @@
 import os
-import pickle
-import time
-
-import cv2
-import argparse
 import numpy as np
-from keras.applications.mobilenet import preprocess_input
+import zipfile
+import io
+import inspect
+import cv2
+from sklearn.metrics.pairwise import cosine_distances, cosine_similarity
 
-from imgOVDoc import model_util_ov
-# from model_util import DeepModel
+from openvino.runtime import Core
 
+comparation = {}
 
-class ImageClassifier:
-    def __init__(self):
-        self.all_skus = {}
-        self.model = model_util_ov.DeepModel()
-        self.predict_time = 0
-        self.time_search = 0
-        self.count_frame = 0
-        self.top_k = 5
+core = Core()
 
-    def extract_features_from_img(self, cur_img):
-        """Судя по названию эта функция извлекает фичи из тестового изображения"""
-        cur_img = cv2.resize(cur_img, (224, 224))
-        img = preprocess_input(cur_img)
-        img = np.expand_dims(img, axis=0)
-        feature = self.model.extract_feature(img)
-        return feature
+classification_model_xml = 'image-retrieval-0001/FP32/image-retrieval-0001.xml'
 
-    def predict(self, img):
-        self.count_frame += 1
-        before_time = time.time()
-        target_features = self.extract_features_from_img(img)
-        self.predict_time += time.time() - before_time
-        max_distance = 0
-        result_dish = 0
+model = core.read_model(model=classification_model_xml)
+compiled_model = core.compile_model(model=model, device_name="CPU")
 
-        for dish, features_all in self.all_skus.items():
-            for features in features_all:
-                cur_distance = self.model.cosine_distance(target_features, features)
-                cur_distance = cur_distance[0][0]
-                if cur_distance > max_distance:
-                    max_distance = cur_distance
-                    result_dish = dish
+input_layer = compiled_model.input(0)
+output_layer = compiled_model.output(0)
 
-        return result_dish, max_distance
+def preprocess_image(image_path, h, w):
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (w, h))
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = image.astype(np.float32)
+    image = np.array(image)
+    blob = np.expand_dims(image, axis=0)
 
-    def add_img(self, img_path, id_img):
-        img = cv2.imread(img_path)
-        cur_img = img
-        feature = self.extract_features_from_img(cur_img)
-        if id_img not in self.all_skus:
-            self.all_skus[id_img] = []
-        self.all_skus[id_img].append(feature)
-        return feature
-
-    def remove_by_id(self, id_img):
-        if id_img in self.all_skus:
-            self.all_skus.pop(id_img)
-
-    def remove_all(self):
-        self.all_skus.clear()
-
-    def add_img_from_pickle(self, id_img, pickle_path):
-        res = pickle.load(open(pickle_path, 'rb'))
-        self.all_skus[id_img] = res
-
-    def get_additional_info(self):
-        json_res = {}
-        json_res["Extract features, time"] = self.predict_time
-        json_res["Find nearest, time"] = self.time_search
-        json_res["Count frame"] = self.count_frame
-        json_res["RPS"] = self.count_frame / (self.predict_time + self.time_search)
-        return json_res
+    return blob
 
 
-# if __name__ == "__main__":
-    # ap = argparse.ArgumentParser()
-    # ap.add_argument("-i", "--image", required=True, help="path to input image")
-    # args = vars(ap.parse_args())
+query_image_path = os.path.join('images', os.listdir('images')[0]) # возвращаем путь к картинке по которой ищем совпадение
+preprocessed_query_image = preprocess_image(query_image_path, 224, 224)
 
-    # img = cv2.imread(args["image"])
+result_infer = compiled_model([preprocessed_query_image])[output_layer] # обрабатываем картинку
+result_index = np.argmax(result_infer)
 
-def run_match(img_path):
+
+# Preprocess the batch of images
+batch_images_path = os.path.join('archive', os.listdir('archive')[0])
+batch_images_dir = 'unpack_archive'
+
+with zipfile.ZipFile(batch_images_path, 'r') as zip_ref:
+    zip_ref.extractall(batch_images_dir)
+    zip_ref.close()
+
+batch_images = []
+for image_file in os.listdir(batch_images_dir):
+    image_path = os.path.join(batch_images_dir, image_file)
+    preprocessed_image = preprocess_image(image_path, 224, 224)
+    batch_images.append(preprocessed_image)
+
+batch_images = np.array(batch_images)
+
+result_batch = []
+for i in range(len(batch_images)):
+    result = compiled_model([batch_images[i]])[output_layer]
+    result_batch.append(result)
     
-    img = cv2.imread(img_path)
+result_batch = np.array(result_batch)
 
-    classifaier = ImageClassifier()
-    d_img = "uploads/unpack_archive"
-    d_path = os.listdir(d_img)
+for i in range(len(result_batch)):
+    similarities = 1 - cosine_distances(result_batch[i], result_infer)
+    percentages = similarities * 100
+    comparation[os.listdir(batch_images_dir)[i]] = percentages
+    
+    
+best_similarity = max(comparation, key=lambda x: comparation[x])
 
-    for f in d_path:
-        classifaier.add_img(os.path.join(d_img, f), f)
-        
-    # t_img = "Otest"
-    # t_path = os.listdir(t_img)
-    # img = cv2.imread(os.path.join(t_img, t_path[0]))
-    result = classifaier.predict(img)
-    if result[1] < 0.6:
-        return "нет совпадений"
-    else:
+
+def answer(similarity):
+    result = comparation[similarity].item(0, 0)
+    if result > 60:
+        print(similarity, result)
         return result
+    else:
+        return "Нет совпадений!"
+
+answer(best_similarity)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
