@@ -5,8 +5,11 @@ import io
 import inspect
 import cv2
 from sklearn.metrics.pairwise import cosine_distances, cosine_similarity
+import time
 
 from openvino.runtime import Core
+
+t_start = time.perf_counter()
 
 comparation = {}
 
@@ -79,8 +82,8 @@ def answer(similarity):
         return "Нет совпадений!"
 
 answer(best_similarity)
-    
-
+all_time = time.perf_counter() - t_start
+print(all_time)
 
 
 
