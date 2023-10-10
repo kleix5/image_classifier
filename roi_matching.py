@@ -7,10 +7,10 @@ import argparse
 import numpy as np
 from keras.applications.mobilenet import preprocess_input
 
-from app import model_util
+from imgcls import model_util
 # from model_util import DeepModel
 
-
+comparation = {}
 class ImageClassifier:
     def __init__(self):
         self.all_skus = {}
@@ -40,6 +40,7 @@ class ImageClassifier:
             for features in features_all:
                 cur_distance = self.model.cosine_distance(target_features, features)
                 cur_distance = cur_distance[0][0]
+                comparation[dish] = cur_distance
                 if cur_distance > max_distance:
                     max_distance = cur_distance
                     result_dish = dish
@@ -97,11 +98,12 @@ def run_match(img_path):
     # t_path = os.listdir(t_img)
     # img = cv2.imread(os.path.join(t_img, t_path[0]))
     result = classifaier.predict(img)
-    if result[1] < 0.6:
-        return "нет совпадений"
-    else:
-        return result
-
+    # print(type(result))
+    # if result[1] < 0.6:
+    #     return "нет совпадений"
+    # else:
+    #     return result
+    return result, comparation
 
 
 
