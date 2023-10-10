@@ -3,6 +3,8 @@
 {% block body %}
 
 	<form action="upload" method="POST" enctype="multipart/form-data">
+			<label><input type="radio" name="model" checked value="1"/>Модель 1</label>
+			<label><input type="radio" name="model" value="2"/>Модель 2</label>
 				<input type="file" name="file">
 				<input type="file" name="file2">
 				<input type="Submit" value="Upload">
